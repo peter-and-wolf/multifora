@@ -20,3 +20,11 @@ def how_long(resolution='seconds'):
       return result
     return _wrapper
   return _decorator
+
+
+def quote_tokens(text: str) -> str:
+  return text.replace('⟪', '"⟪').replace('⟫', '⟫"')
+
+
+def dict2args(d: dict) -> str:
+  return ' '.join([f'{k}="{v}"' for k, v in d.items()])

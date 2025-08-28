@@ -208,3 +208,5 @@ __marimo__/
 .python-version
 google-calendar-creds.json
 google-calendar-token.json
+promt.txt
+src/ttt.py

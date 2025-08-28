@@ -80,7 +80,7 @@ async def list_events(calendar_id: str, from_date: datetime):
       full_res=True
     )
     async for page in pages:
-      pprint.pprint(page)
+      pprint(page)
 
 
 async def get_calendar_id(calendar_name: str) -> str:
@@ -100,8 +100,12 @@ async def get_calendar_id(calendar_name: str) -> str:
     
 
 if __name__ == "__main__":
-   asyncio.run(get_calendar_id(
-     calendar_name='Bloom'
+   #asyncio.run(get_calendar_id(
+   #  calendar_name='Bloom'
+   #))
+   asyncio.run(list_events(
+      calendar_id='primary',
+      from_date=datetime.now()
    ))
 
 
