@@ -73,15 +73,21 @@ async def relationships(t1: str, t2: str) -> str:
 
 @tool
 @log_tool
+async def user_name() -> str:
+  ''' Возвращает имя текущего пользователя.
+  '''
+  return 'Емельянов Петр Николаевич'
+
+
+@tool
+@log_tool
 async def age(t: str) -> str:
   ''' Возвращает информацию о возрасте объекта t, который задан строками 
-  в формате "⟪PII:PERSON:*⟫". Возвращаемое значение – строка в формате "⟪PII:NUMBER:*⟫".
+  в формате "⟪PII:PERSON:*⟫". Возвращаемое значение – строка, включающая 
+  возраст в формате "⟪PII:NUMBER:*⟫".
   '''
-  print('TTTTT', t)
   if s := comp.get(t):
-    print('RRRRR', s)
     if age := db['age'].get(s.lemma):
-      print('AAAAA', age)
       token = make_token(PIIKind.NUMBER)
       comp.add(Substitution(
         text=str(age),
@@ -107,22 +113,44 @@ async def compare(t1: str, t2: str) -> str:
         n1 = int(s1.text)
         n2 = int(s2.text)
         if n1 > n2:
-          return "GREATER"
+          return 'GREATER'
         elif n1 == n2:
-          return "EQUAL"
+          return 'EQUAL'
         else:
-          return "LESS"
+          return 'LESS'
 
-  return "UNKNOWN"
+  return 'UNKNOWN'
+
+
+@tool
+@log_tool
+async def city_area(tс: str) -> str:
+  ''' Возвращает информацию о площади географического объекта tс (например, города), который 
+  задан строкой в формате "⟪PII:LOCATION:*⟫". Возвращаемое значение – строка, включающая площадь 
+  в формате "⟪PII:NUMBER:*⟫".
+  '''
+  if c := comp.get(tс):
+    if area := db['cities'].get(c.lemma):
+      token = make_token(PIIKind.NUMBER)
+      comp.add(Substitution(
+        text=str(area),
+        lemma=str(area),
+        kind='NUMBER',
+        token=token
+      ))
+      return f'площадь {tс} – {token}'
+  return f'площадь {tс} неизвестна'
 
 
 tools = [
-  add,
-  list_files,
-  current_datetime,
-  show_schedule,
-  relationships,
+  #add,
+  #list_files,
+  #current_datetime,
+  #show_schedule,
+  #relationships,
+  user_name,
   age,
+  city_area,
   compare
 ]
 

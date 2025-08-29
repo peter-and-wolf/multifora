@@ -8,7 +8,7 @@ from typing import (
   TypedDict,
   Sequence,
   Annotated,
-  Protocol
+  Callable
 )
 
 from langgraph.runtime import get_runtime
@@ -180,7 +180,8 @@ class Service:
     self.container = container
     self.input_element = input_element
 
-    self.llm = get_llm('gigachat').bind_tools(tools.tools)
+    self.llm = get_llm('gigachat') #.bind_tools(tools.tools)
+    self.tools = []
     self.graph = StateGraph(AgentState)
     self.graph.add_node('masker', mask)
     self.graph.add_node('unmasker', unmask)
@@ -203,6 +204,20 @@ class Service:
     msg = self.input_element.value
     self.input_element.value = ''
     return msg
+  
+
+  def connect_tool(self, on: bool, tool: Callable) -> None:
+    tidx = -1
+    for i, t in enumerate(self.tools):
+      if t == tool:
+        tidx = i
+        break
+    if tidx >= 0:
+      self.tools.pop(tidx)
+    if on:
+      self.tools.append(tool) 
+
+    self.llm = self.llm.bind_tools(self.tools)
 
 
   async def invoke(self) -> None:
@@ -249,9 +264,14 @@ class Service:
     ui.run_javascript('window.scrollTo(0, document.body.scrollHeight)')
 
 
-def make_callback(service: Service):
-  async def cb() -> None:
-    await service.invoke()
+def make_callback(service: Service, fn: str, *args, **kwargs):
+  async def cb(e) -> None:
+    if fn == 'invoke':
+      await service.invoke(*args, **kwargs)
+    elif fn == 'connect_tool':
+      service.connect_tool(e.value, *args, **kwargs)
+    else:
+      raise ValueError(f'Unknown function {fn}')
   return cb
 
 
@@ -260,16 +280,22 @@ def page_layout():
   
   with ui.header(elevated=True).style('background-color: #3874c8').classes(
       'flex items-center justify-start pl-0 pr-2 py-2'):
-    ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').props('flat color=white').classes('ml-0')
+    ui.button(on_click=lambda: left_drawer.toggle(), icon='menu') \
+      .props('flat color=white') \
+        .classes('ml-0')
     ui.label('Homomorphic Agent').classes('ml-0')
     ui.space()
-    ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white').classes('ml-0')
+    ui.button(on_click=lambda: right_drawer.toggle(), icon='menu') \
+      .props('flat color=white') \
+      .classes('ml-0')
 
 
   with ui.left_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered') as left_drawer:
     with ui.column().classes('w-full h-full flex'):
-      with ui.column().classes('gap-0 w-full p-0 grow'):
-        ui.label('Компендиум').classes('px-3 py-2 text-sm font-medium text-gray-700')
+      with ui.column().classes('gap-0 w-full grow'):
+        with ui.row().classes('w-full gap-0 item-center'):
+          ui.button(icon='ti-trash', on_click=lambda: (tools.comp.clear(), compendium_tree.refresh())).props('flat')
+          ui.label('Компендиум').classes('self-center text-sm font-medium text-gray-700')
         with ui.scroll_area().classes('w-full h-full'):
           compendium_tree()
 
@@ -280,27 +306,28 @@ def page_layout():
         with ui.scroll_area().classes('w-full h-full'):
           ui.tree(db_tree, label_key='id').expand()
 
+  svc: Service = None
   chat_feed = ui.column().classes('max-w-xl text-wrap')
 
-
-  with ui.right_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered') as right_drawer:
-    with ui.column().classes('w-full h-full flex'):
-      ui.label('Инструменты').classes('px-3 py-2 text-sm font-medium text-gray-700')
-
-
   with ui.footer().classes('bg-white'):
-    with ui.row().classes('w-full no-wrap items-center gap-2'):
+    with ui.row().classes('w-full no-wrap items-start'):
       with ui.avatar():
         ui.image(USER_AVATAR)
       text = ui.input(placeholder='message') \
         .props('rounded outlined input-class=mx-3') \
-        .classes('w-full')
-        #.classes('w-3/4')
-      
+        .classes('w-full')#.classes('w-3/4')
       svc = Service(chat_feed, text)
-      text.on('keydown.enter', make_callback(svc))
-      
-      #ui.button(on_click=send, icon='send').props('rounded color=primary')
+      text.on('keydown.enter', make_callback(svc, fn='invoke'))
+
+  with ui.right_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered') as right_drawer:
+    with ui.scroll_area().classes('w-full h-full flex'):
+      ui.label('Инструменты').classes('px-3 py-2 text-sm font-medium text-gray-700')
+      for t in tools.tools:
+        with ui.column().classes('w-full gap-0'):
+          with ui.row().classes('w-full gap-0 items-center'):
+            ui.switch(value=False, on_change=make_callback(svc, fn='connect_tool', tool=t))
+            ui.label(t.name)
+          ui.label(t.description).classes('text-xs font-light px-3')
 
 
 ui.add_head_html('<link href="https://cdn.jsdelivr.net/themify-icons/0.1.2/css/themify-icons.css" rel="stylesheet" />', shared=True)

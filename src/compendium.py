@@ -41,7 +41,11 @@ class Compendium:
   def get(self, token: str) -> Substitution:
     return self.dictionary.get(token)
   
+
+  def clear(self):
+    self.dictionary = {}
   
+    
   def as_dict(self) -> dict:
     return {k: asdict(v) for k, v in self.dictionary.items()}
   
