@@ -84,7 +84,8 @@ async def user_name() -> str:
 async def age(t: str) -> str:
   ''' Возвращает информацию о возрасте объекта t, который задан строками 
   в формате "⟪PII:PERSON:*⟫". Возвращаемое значение – строка, включающая 
-  возраст в формате "⟪PII:NUMBER:*⟫".
+  возраст в формате "⟪PII:NUMBER:*⟫. ВАЖНО: на множестве объектов "⟪PII:NUMBER:*⟫" не определено отношение 
+  порядка, ты не можешь сравнивать их напрямую".
   '''
   if s := comp.get(t):
     if age := db['age'].get(s.lemma):
@@ -124,10 +125,29 @@ async def compare(t1: str, t2: str) -> str:
 
 @tool
 @log_tool
+async def sort(tl: list[str], reverse: bool = False) -> list[str]:
+  ''' Сортирует список объектов, заданых строками в формате "⟪PII:NUMBER:*⟫", 
+  в порядке возрастания или убывания. Если reverse=False, то сортирует в порядке возрастания, 
+  если reverse=True, то сортирует в порядке убывания. Возвращает отсортированный список объектов 
+  в формате "⟪PII:NUMBER:*⟫". 
+  '''
+  pairs = []
+  for t in tl:
+    if s := comp.get(t):
+      pairs.append((t, int(s.lemma)))
+    else:
+      return 'Сортировку выполнить не удалось'
+     
+  return [p[0] for p in sorted(pairs, key=lambda x: x[1])]
+
+
+@tool
+@log_tool
 async def city_area(tс: str) -> str:
   ''' Возвращает информацию о площади географического объекта tс (например, города), который 
   задан строкой в формате "⟪PII:LOCATION:*⟫". Возвращаемое значение – строка, включающая площадь 
-  в формате "⟪PII:NUMBER:*⟫".
+  в формате "⟪PII:NUMBER:*⟫" ВАЖНО: на множестве объектов "⟪PII:NUMBER:*⟫" не определено отношение 
+  порядка, ты не можешь сравнивать их напрямую.
   '''
   if c := comp.get(tс):
     if area := db['cities'].get(c.lemma):
@@ -151,7 +171,8 @@ tools = [
   user_name,
   age,
   city_area,
-  compare
+  compare,
+  sort
 ]
 
 

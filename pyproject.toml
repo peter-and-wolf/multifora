@@ -15,6 +15,7 @@ dependencies = [
     "gradio>=5.42.0",
     "humanize>=4.12.3",
     "langchain>=0.3.27",
+    "langchain-community>=0.3.29",
     "langchain-deepseek>=0.1.4",
     "langchain-gigachat>=0.3.12",
     "langchain-mcp-adapters>=0.1.9",
@@ -28,4 +29,5 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pymorphy3>=2.0.4",
     "spacy>=3.8.7",
+    "yandexcloud>=0.357.0",
 ]

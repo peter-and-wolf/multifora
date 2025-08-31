@@ -8,8 +8,10 @@ SYSTEM_PROMPT = (
   "Используй только доступные тебе инструменты для выполнения задачи."
 )
 
-USER_AVATAR = "https://robohash.org/panso?set=set4"
-AGENT_AVATAR = "https://robohash.org/quixote"
+
+LLM_MODEL = 'gigachat'
+USER_AVATAR = 'https://robohash.org/panso?set=set4'
+AGENT_AVATAR = 'https://robohash.org/quixote'
 
 
 class Settings(BaseSettings):
@@ -17,6 +19,10 @@ class Settings(BaseSettings):
   deepseek_api_key: str
   gigachat_model: str
   gigachat_api_key: str
+  yandexgpt_model: str
+  yandexgpt_api_key: str
+  openrouter_model: str
+  openrouter_api_key: str
   google_credentials_file: str
   google_token_file: str
 

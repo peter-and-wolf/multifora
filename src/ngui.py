@@ -2,7 +2,6 @@ import os
 import asyncio
 from datetime import datetime
 from dataclasses import dataclass
-import time
 import json
 from typing import (
   TypedDict,
@@ -37,6 +36,7 @@ from db import db, db_tree
 from nicegui import ui
 
 from config import (
+  LLM_MODEL,
   SYSTEM_PROMPT,
   USER_AVATAR, 
   AGENT_AVATAR,
@@ -180,7 +180,7 @@ class Service:
     self.container = container
     self.input_element = input_element
 
-    self.llm = get_llm('gigachat') #.bind_tools(tools.tools)
+    self.llm = get_llm(LLM_MODEL)
     self.tools = []
     self.graph = StateGraph(AgentState)
     self.graph.add_node('masker', mask)
@@ -251,7 +251,7 @@ class Service:
           )
         )
         agent_message.remove(spinner)
-      print(result)
+
       if result:
         ui.chat_message(
           text=result['messages'][-1].content,
@@ -277,7 +277,6 @@ def make_callback(service: Service, fn: str, *args, **kwargs):
 
 @ui.page('/')
 def page_layout():
-  
   with ui.header(elevated=True).style('background-color: #3874c8').classes(
       'flex items-center justify-start pl-0 pr-2 py-2'):
     ui.button(on_click=lambda: left_drawer.toggle(), icon='menu') \
@@ -290,7 +289,7 @@ def page_layout():
       .classes('ml-0')
 
 
-  with ui.left_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered') as left_drawer:
+  with ui.left_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered').classes('shrink-0') as left_drawer:
     with ui.column().classes('w-full h-full flex'):
       with ui.column().classes('gap-0 w-full grow'):
         with ui.row().classes('w-full gap-0 item-center'):
@@ -307,7 +306,7 @@ def page_layout():
           ui.tree(db_tree, label_key='id').expand()
 
   svc: Service = None
-  chat_feed = ui.column().classes('max-w-xl text-wrap')
+  chat_feed = ui.column().classes('flex min-w-0  min-h-0')
 
   with ui.footer().classes('bg-white'):
     with ui.row().classes('w-full no-wrap items-start'):
@@ -319,15 +318,16 @@ def page_layout():
       svc = Service(chat_feed, text)
       text.on('keydown.enter', make_callback(svc, fn='invoke'))
 
-  with ui.right_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered') as right_drawer:
-    with ui.scroll_area().classes('w-full h-full flex'):
+  with ui.right_drawer(bottom_corner=True).style('background-color: #ebf1fa').props('bordered').classes('shrink-0') as right_drawer:
+    with ui.column().classes('w-full h-full gap-0'):
       ui.label('Инструменты').classes('px-3 py-2 text-sm font-medium text-gray-700')
-      for t in tools.tools:
-        with ui.column().classes('w-full gap-0'):
-          with ui.row().classes('w-full gap-0 items-center'):
-            ui.switch(value=False, on_change=make_callback(svc, fn='connect_tool', tool=t))
-            ui.label(t.name)
-          ui.label(t.description).classes('text-xs font-light px-3')
+      with ui.scroll_area().classes('w-full h-full'):
+        for t in tools.tools:
+          with ui.column().classes('w-full gap-0'):
+            with ui.row().classes('w-full gap-0 items-center'):
+              ui.switch(value=False, on_change=make_callback(svc, fn='connect_tool', tool=t))
+              ui.label(t.name)
+            ui.label(t.description).classes('text-xs font-light px-3')
 
 
 ui.add_head_html('<link href="https://cdn.jsdelivr.net/themify-icons/0.1.2/css/themify-icons.css" rel="stylesheet" />', shared=True)
